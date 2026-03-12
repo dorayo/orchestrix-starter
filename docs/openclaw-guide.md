@@ -333,7 +333,6 @@ git log --oneline -10
 |------|---------|
 | 全新小项目脚手架 | `/o dev` → `*solo "项目描述"` |
 | 快速加一个小功能 | `/o dev` → `*solo "功能描述"` |
-| 不需要 Story 流程的快速开发 | `/o dev` → `*quick-develop` |
 
 ### 7.2 操作序列
 
@@ -458,30 +457,55 @@ OpenClaw 执行：
 
 ## 十、新起迭代（Iteration）
 
-> **MVP 完成后，基于用户反馈或新需求启动新一轮迭代。**
+> **MVP 完成后，基于用户反馈或新需求启动新一轮迭代。PM 生成 next-steps 文件，然后按 HANDOFF 指示逐一派发给各 Agent。**
 
 ### 10.1 迭代流程
 
 ```
-# Step 1: PM 启动新迭代（需要已分片的 PRD）
+# Step 1: PM 启动新迭代，生成 next-steps
 /o pm
 *start-iteration
+# → PM 输出 docs/prd/8-next-steps.md
 
-# Step 2: PM 根据反馈修订 PRD（如需要）
-*revise-prd
+# Step 2: 查看 next-steps 文件，按 🎯 HANDOFF TO 顺序派发
+# 文件结构示例：
+#   🎯 HANDOFF TO ux-expert:  → 创建前端规格、更新 Epic YAML
+#   🎯 HANDOFF TO architect:  → 更新架构文档、累积注册表、Epic YAML
+#   🎯 HANDOFF TO sm:         → 提交规划文档、创建 Stories
 
-# Step 3: PO 验证更新后的文档
-/clear → /o po
-*execute-checklist po-master-validation
-*shard
+# Step 3: 依次执行每个 HANDOFF 块
+/clear → /o ux-expert
+# 将 8-next-steps.md 中 🎯 HANDOFF TO ux-expert 部分的内容发给它执行
+
+/clear → /o architect
+# 将 8-next-steps.md 中 🎯 HANDOFF TO architect 部分的内容发给它执行
+
+/clear → /o sm
+# 将 8-next-steps.md 中 🎯 HANDOFF TO sm 部分的内容发给它执行
+# SM 执行 *create-next-story 按优先级创建 Stories
 
 # Step 4: 进入开发循环（同主线流程）
 /clear → /o sm
-*draft
+*draft {first_story_id}
 ...
 ```
 
-### 10.2 迭代 vs 新项目
+### 10.2 next-steps 文件结构
+
+PM `*start-iteration` 会生成 `docs/prd/8-next-steps.md`，包含：
+
+| 区块 | 内容 |
+|------|------|
+| `🎯 HANDOFF TO ux-expert` | 创建 Epic 前端规格文档、更新 Epic YAML 的 `sm_hints.front_end_spec` |
+| `🎯 HANDOFF TO architect` | 更新架构文档（组件/工作流/DB Schema/API）、更新累积注册表、更新 Epic YAML 的 `sm_hints.architecture` |
+| `🎯 HANDOFF TO sm` | 提交规划阶段文档、按优先级创建 Stories |
+| `Summary` | Agent 分工总览表 |
+| `Key Design Decisions` | 关键设计决策及理由 |
+| `Technical Risk Notes` | 技术风险提示 |
+
+每个 HANDOFF 块内包含：需要读取的文件列表、需要输出的文件、关注点和设计决策。
+
+### 10.3 迭代 vs 新项目
 
 | 维度 | 新迭代 | 新项目 |
 |------|--------|--------|
@@ -489,15 +513,32 @@ OpenClaw 执行：
 | 架构 | 沿用现有架构（如需变更走变更流程） | 全新设计 |
 | Stories | 新 Epic，Story ID 继续递增 | 从 1.1 开始 |
 | 文档分片 | 增量分片 | 全量分片 |
+| next-steps | PM 自动生成，含多 Agent HANDOFF | 不适用 |
 
-### 10.3 OpenClaw 用法
+### 10.4 OpenClaw 用法
 
 > "MVP 做完了，根据用户反馈启动第二轮迭代"
 
 OpenClaw 执行：
 ```
+# 1. PM 生成 next-steps
 /clear → /o pm
 *start-iteration
+
+# 2. 读取 docs/prd/8-next-steps.md
+# 3. 按文件中的 🎯 HANDOFF TO 顺序，依次切换 Agent 并发送对应内容
+/clear → /o ux-expert
+{粘贴 HANDOFF TO ux-expert 部分内容}
+
+/clear → /o architect
+{粘贴 HANDOFF TO architect 部分内容}
+
+/clear → /o sm
+{粘贴 HANDOFF TO sm 部分内容}
+
+# 4. 开始开发
+/clear → /o sm
+*draft {story_id}
 ```
 
 ---
