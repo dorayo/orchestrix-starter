@@ -1,0 +1,23 @@
+{
+  "name": "orchestrix-starter",
+  "version": "1.0.0",
+  "description": "Orchestrix project scaffolding plugin. Interactively creates new projects with multi-agent infrastructure: MCP config, hooks, slash commands, tmux automation, and project brief generation.",
+  "author": {
+    "name": "dorayo",
+    "url": "https://github.com/dorayo"
+  },
+  "homepage": "https://orchestrix-mcp.youlidao.ai",
+  "repository": "https://github.com/dorayo/orchestrix-starter",
+  "license": "MIT",
+  "keywords": [
+    "orchestrix",
+    "project-init",
+    "scaffolding",
+    "multi-agent",
+    "mcp",
+    "project-brief",
+    "openclaw",
+    "claude-code"
+  ],
+  "skills": "./skills/"
+}
