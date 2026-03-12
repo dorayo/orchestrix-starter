@@ -1,6 +1,7 @@
 ---
 name: create-project
 description: "Interactive Orchestrix project scaffolding. Creates project directory under ~/Codes/, generates project brief from Q&A, installs MCP config, hooks, slash commands, tmux scripts, and initializes git. Use when user wants to create a new project, init a project, or start a new Orchestrix workspace."
+license: MIT
 metadata:
   author: dorayo
   version: "1.0.0"
