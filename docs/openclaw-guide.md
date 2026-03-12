@@ -53,7 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/dorayo/orchestrix-starter/main/scri
 
 ```bash
 # 确保 cc 命令可用（start-orchestrix.sh 依赖此别名）
-alias cc='claude'
+alias cc='claude --dangerously-skip-permissions'
 ```
 
 ---
@@ -214,15 +214,15 @@ start-orchestrix.sh 启动
     ↓
 SM (窗口1) 自动开始 → *draft（创建第一个 Story）
     ↓ HANDOFF TO architect
-Architect (窗口0) → *review S001（技术审查）
+Architect (窗口0) → *review 1.1（技术审查）
     ↓ HANDOFF TO dev
-Dev (窗口2) → *develop-story S001（开发）
+Dev (窗口2) → *develop-story 1.1（开发）
     ↓ HANDOFF TO qa
-QA (窗口3) → *review S001（代码审查）
+QA (窗口3) → *review 1.1（代码审查）
     ↓ HANDOFF TO sm
-SM (窗口1) → *draft --continue（创建下一个 Story）
+SM (窗口1) → *draft 1.2（创建下一个 Story）
     ↓ HANDOFF TO dev
-Dev (窗口2) → *develop-story S002
+Dev (窗口2) → *develop-story 1.2
     ↓ ...
     ↓ 循环直到所有 Story 完成
 ```
