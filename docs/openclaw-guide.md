@@ -323,7 +323,280 @@ git log --oneline -10
 
 ---
 
-## 七、Agent 命令速查表
+## 七、Solo 开发模式
+
+> **Solo 模式跳过 Story/QA 关卡，适用于小型独立项目或快速原型。**
+
+### 7.1 适用场景
+
+| 场景 | 推荐方式 |
+|------|---------|
+| 全新小项目脚手架 | `/o dev` → `*solo "项目描述"` |
+| 快速加一个小功能 | `/o dev` → `*solo "功能描述"` |
+| 不需要 Story 流程的快速开发 | `/o dev` → `*quick-develop` |
+
+### 7.2 操作序列
+
+```
+cc
+│
+├─ /o dev
+│  └─ *solo "实现一个用户登录功能，支持邮箱和手机号"
+│     ↓ 自动完成：创建 Story → 编码 → 测试 → 提交
+│
+└─ 完成
+```
+
+### 7.3 OpenClaw 用法
+
+告诉 OpenClaw：
+
+> "快速开发一个 [功能描述]，不走完整流程"
+
+OpenClaw 执行：
+```
+/o dev
+*solo "功能描述"
+```
+
+---
+
+## 八、Bug 修复流程
+
+### 8.1 轻量 Bug 修复（不需要 Story）
+
+```
+/o dev
+*quick-fix "登录页面在 Safari 下白屏"
+```
+
+Dev 会：定位问题 → 修复 → 测试 → 提交，全程无需创建 Story。
+
+### 8.2 正式 Bug 修复（创建 Bugfix Story）
+
+当 Bug 较复杂或需要追踪时：
+
+```
+# Step 1: SM 创建 bugfix Story
+/o sm
+*draft-bugfix "用户并发下单时库存出现负数"
+
+# Step 2: Dev 开发修复
+/clear → /o dev
+*develop-story {bugfix_story_id}
+
+# Step 3: QA 验证
+/clear → /o qa
+*review {bugfix_story_id}
+*finalize-commit {bugfix_story_id}
+```
+
+### 8.3 Dev 开发中发现 Bug 上报
+
+Dev 在开发 Story 过程中发现不相关的 Bug 时，会在输出中标记。SM 可以用 `*draft-bugfix` 为其创建独立 Story，不影响当前 Story 进度。
+
+### 8.4 OpenClaw 用法
+
+| 指令 | OpenClaw 操作 |
+|------|--------------|
+| "快速修一个 bug: [描述]" | `/o dev` → `*quick-fix "[描述]"` |
+| "这个 bug 比较重要，需要追踪" | `/o sm` → `*draft-bugfix "[描述]"` → Dev → QA |
+
+---
+
+## 九、Epic 冒烟测试
+
+> **当一个 Epic 下的所有 Story 都开发完成后，QA 执行端到端冒烟测试，验证整体功能完整性。**
+
+### 9.1 触发条件
+
+- Epic 下所有 Story 已通过 QA 审查
+- 所有代码已提交
+
+### 9.2 操作序列
+
+```
+/o qa
+*smoke-test {epic_id}
+```
+
+QA 会：
+1. 识别 Epic 涉及的所有功能点
+2. 设计端到端测试场景
+3. 执行冒烟测试
+4. 生成测试报告
+5. 标记 Epic 为已验证或发现回归问题
+
+### 9.3 如果冒烟测试发现问题
+
+```
+# QA 生成问题报告后
+/clear → /o sm
+*draft-bugfix "冒烟测试发现: [问题描述]"
+
+# Dev 修复
+/clear → /o dev
+*develop-story {bugfix_story_id}
+
+# QA 重新验证
+/clear → /o qa
+*review {bugfix_story_id}
+*smoke-test {epic_id}    # 再次冒烟测试
+```
+
+### 9.4 OpenClaw 用法
+
+> "Epic 1 的所有 Story 都做完了，跑一下冒烟测试"
+
+OpenClaw 执行：
+```
+/clear → /o qa
+*smoke-test 1
+```
+
+---
+
+## 十、新起迭代（Iteration）
+
+> **MVP 完成后，基于用户反馈或新需求启动新一轮迭代。**
+
+### 10.1 迭代流程
+
+```
+# Step 1: PM 启动新迭代（需要已分片的 PRD）
+/o pm
+*start-iteration
+
+# Step 2: PM 根据反馈修订 PRD（如需要）
+*revise-prd
+
+# Step 3: PO 验证更新后的文档
+/clear → /o po
+*execute-checklist po-master-validation
+*shard
+
+# Step 4: 进入开发循环（同主线流程）
+/clear → /o sm
+*draft
+...
+```
+
+### 10.2 迭代 vs 新项目
+
+| 维度 | 新迭代 | 新项目 |
+|------|--------|--------|
+| PRD | 在现有 PRD 上追加/修改 | 从零创建 |
+| 架构 | 沿用现有架构（如需变更走变更流程） | 全新设计 |
+| Stories | 新 Epic，Story ID 继续递增 | 从 1.1 开始 |
+| 文档分片 | 增量分片 | 全量分片 |
+
+### 10.3 OpenClaw 用法
+
+> "MVP 做完了，根据用户反馈启动第二轮迭代"
+
+OpenClaw 执行：
+```
+/clear → /o pm
+*start-iteration
+```
+
+---
+
+## 十一、需求变更管理
+
+> **开发过程中收到需求变更时，通过 PO 路由到 PM 或 Architect 处理，确保变更受控。**
+
+### 11.1 变更流程
+
+```
+# Step 1: PO 接收变更并路由
+/o po
+*route-change
+
+# PO 会根据变更类型自动路由：
+#   - 需求/范围变更 → PM
+#   - 技术/架构变更 → Architect
+#   - 两者都涉及 → 先 PM 再 Architect
+```
+
+### 11.2 需求变更（PM 处理）
+
+```
+# PO 路由到 PM
+/clear → /o pm
+*revise-prd
+# PM 更新 PRD 并标记变更影响范围
+
+# PO 重新验证
+/clear → /o po
+*execute-checklist po-master-validation
+*shard    # 重新分片（如有新增内容）
+```
+
+### 11.3 技术变更（Architect 处理）
+
+```
+# PO 路由到 Architect
+/clear → /o architect
+*resolve-change
+# Architect 生成技术变更提案（TCP）
+
+# SM 根据 TCP 创建/修改 Story
+/clear → /o sm
+*apply-proposal {proposal_id}
+```
+
+### 11.4 变更影响评估
+
+| 变更规模 | 处理方式 |
+|---------|---------|
+| 小变更（不影响已完成 Story） | PM 更新 PRD → 继续开发 |
+| 中变更（影响未开始的 Story） | PM 更新 PRD → SM 修改 Story → 继续 |
+| 大变更（影响已完成的 Story） | PM 更新 PRD → Architect 评估 → SM 创建回退/重做 Story |
+
+### 11.5 OpenClaw 用法
+
+| 指令 | OpenClaw 操作 |
+|------|--------------|
+| "客户要求加一个导出 PDF 的功能" | `/o po` → `*route-change` |
+| "需要把数据库从 MySQL 换成 PostgreSQL" | `/o po` → `*route-change`（会路由到 Architect） |
+| "PRD 需要更新，加了新需求" | `/o pm` → `*revise-prd` |
+
+---
+
+## 十二、Brownfield（已有项目增强）
+
+> **对已有代码库进行功能增强或维护时的流程。**
+
+### 12.1 路由判断
+
+| 变更规模 | 估时 | 推荐方式 |
+|---------|------|---------|
+| 单个小功能 | < 4h | `/o sm` → `*draft` (brownfield story) |
+| 小型功能（1-3 Story） | 4h-2d | `/o sm` → `*draft` (brownfield epic) |
+| 大型增强 | > 2d | 走完整 Greenfield 流程（可跳过已有文档） |
+| 快速修复 | < 1h | `/o dev` → `*quick-fix` |
+
+### 12.2 Brownfield 项目摸底
+
+对不熟悉的已有项目，先用 Architect 做代码库分析：
+
+```
+/o architect
+*document-project
+```
+
+生成项目文档后再决定走哪条路径。
+
+### 12.3 OpenClaw 用法
+
+> "这个项目已经有代码了，我想加一个通知功能"
+
+OpenClaw 判断规模后执行对应流程。
+
+---
+
+## 十三、Agent 命令速查表
 
 ### 产品与规划
 
@@ -352,7 +625,7 @@ git log --oneline -10
 
 ---
 
-## 八、注意事项
+## 十四、注意事项
 
 1. **tmux 模式下不需要手动 `/clear`** — HANDOFF 机制自动处理 Agent 切换和上下文清理
 2. **单窗口模式下每次切换必须 `/clear`** — 否则上下文残留导致角色混乱
