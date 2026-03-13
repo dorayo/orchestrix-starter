@@ -4,7 +4,7 @@ description: "Orchestrix multi-agent workflow knowledge base. Teaches how to ope
 license: MIT
 metadata:
   author: dorayo
-  version: "1.1.0"
+  version: "1.2.0"
   homepage: "https://orchestrix-mcp.youlidao.ai"
   openclaw:
     emoji: "\U0001F4D6"
@@ -112,6 +112,67 @@ tmux send-keys -t orch:0 "/clear" Enter
 sleep 2
 tmux send-keys -t orch:0 "/o dev" Enter
 ```
+
+### 指令发送铁律（必须遵守）
+
+> **每次向 Agent 发送任务指令前，必须严格执行三步序列：`/clear` → `/o {agent}` → `*command`。不得跳过任何一步。**
+
+```bash
+# 铁律：三步序列（每次都必须完整执行）
+WIN="{session}:{window}"
+
+# Step 1: 清空上下文（防止角色混乱）
+tmux send-keys -t $WIN "/clear" Enter
+sleep 2
+
+# Step 2: 激活目标 Agent
+tmux send-keys -t $WIN "/o {agent}" Enter
+sleep 3
+
+# Step 3: 发送任务指令
+tmux send-keys -t $WIN "*{command}" Enter
+```
+
+**为什么不能跳过 `/clear`？**
+- Claude Code 的上下文会残留上一个 Agent 的角色和对话历史
+- 不清空直接切换 Agent 会导致角色混乱、输出不可预期
+- 即使是同一个 Agent 执行新任务，也建议先 `/clear` 确保干净上下文
+
+**唯一例外**：在同一个 Agent 的连续对话中追加指令（不切换 Agent），可以不 `/clear`。
+
+### 并行协作（动态创建窗口）
+
+> **OpenClaw 不局限于固定 4 窗口。可以随时通过 `tmux new-window` 动态创建新窗口，加载额外的 Agent 并行工作。**
+
+适用场景：
+- 需要 Architect 审查的同时让 Dev 准备环境
+- PM 和 UX Expert 同时工作加速规划阶段
+- 任何需要多个 Agent 同时执行互不依赖任务的场景
+
+```bash
+SESSION="orchestrix-{repo-id}"
+
+# 在已有 session 中动态创建新窗口
+tmux new-window -t $SESSION -c ~/Codes/{project-name}/
+
+# 获取新窗口编号（最后创建的窗口）
+NEW_WIN=$(tmux list-windows -t $SESSION -F '#{window_index}' | tail -1)
+
+# 在新窗口中启动 cc 并加载 Agent
+tmux send-keys -t $SESSION:$NEW_WIN "cc" Enter
+sleep 5
+tmux send-keys -t $SESSION:$NEW_WIN "/o ux-expert" Enter
+sleep 3
+tmux send-keys -t $SESSION:$NEW_WIN '*create-doc front-end-spec' Enter
+
+# 任务完成后销毁临时窗口（可选）
+# tmux kill-window -t $SESSION:$NEW_WIN
+```
+
+**注意**：
+- 动态窗口中的 Agent 不参与 HANDOFF 自动协作（HANDOFF 只在固定 4 窗口间生效）
+- OpenClaw 需要自行管理动态窗口的生命周期（创建、监控、销毁）
+- 并行 Agent 操作同一批文件时需注意 git 冲突
 
 ### 等待策略
 
