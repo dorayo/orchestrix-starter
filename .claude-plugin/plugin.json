@@ -1,6 +1,6 @@
 {
   "name": "orchestrix-starter",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Orchestrix project scaffolding plugin. Interactively creates new projects with multi-agent infrastructure: MCP config, hooks, slash commands, tmux automation, and project brief generation.",
   "author": {
     "name": "dorayo",
