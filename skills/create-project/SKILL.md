@@ -4,7 +4,7 @@ description: "Interactive Orchestrix project scaffolding. Creates project direct
 license: MIT
 metadata:
   author: dorayo
-  version: "1.1.0"
+  version: "2.0.0"
   homepage: "https://orchestrix-mcp.youlidao.ai"
   openclaw:
     requires:
