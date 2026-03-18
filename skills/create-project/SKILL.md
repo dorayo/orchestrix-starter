@@ -351,34 +351,9 @@ git commit -m "chore: init project with Orchestrix
 - `.orchestrix-core/scripts/start-orchestrix.sh` — tmux 多窗口启动脚本
 - `.gitignore` — Git 忽略规则
 
-### 下一步操作
+### 下一步
 
-1. 打开新终端进入项目目录：
-   ```
-   cd ~/Codes/{project-dir-name}/
-   ```
-
-2. 启动 Claude Code：
-   ```
-   claude
-   ```
-
-3. 深化项目简报（推荐）：
-   ```
-   /o analyst
-   然后输入: *create-doc project-brief
-   ```
-
-4. 生成 PRD：
-   ```
-   /o pm
-   然后输入: *create-doc prd
-   ```
-
-5. 或直接启动 tmux 多 Agent 协作：
-   ```
-   bash .orchestrix-core/scripts/start-orchestrix.sh
-   ```
+项目骨架已就绪，下一步是进入 **规划阶段**（生成 PRD、架构文档等），完成后再启动自动化开发。
 ```
 
 **如果 License Key 为空**，额外提示：
@@ -386,6 +361,122 @@ git commit -m "chore: init project with Orchestrix
 ⚠️ 提醒：.mcp.json 中的 License Key 尚未配置。
 请编辑 ~/Codes/{project-dir-name}/.mcp.json，将 YOUR_LICENSE_KEY_HERE 替换为你的 License Key。
 申请地址：https://orchestrix-mcp.youlidao.ai
+```
+
+---
+
+## Phase 5: 询问是否启动规划
+
+**输出完成信息后，必须向用户询问**：
+
+```
+---
+
+🚀 **是否立即启动项目规划？**
+
+项目简报已生成，规划阶段将按以下流程自动执行（约 10-20 分钟）：
+
+| 步骤 | Agent | 任务 | 产出 | 备注 |
+|------|-------|------|------|------|
+| 0 | Analyst | 深化项目简报 | `docs/project-brief.md` | **可选** — 增加市场调研、竞品分析 |
+| 1 | PM | 生成 PRD | `docs/prd/*.md` | 基于已有项目简报 |
+| 2 | UX Expert | 前端规格 | `docs/front-end-spec*.md` | 仅当项目包含前端 |
+| 3 | Architect | 架构文档 | `docs/architecture*.md` | |
+| 4 | PO | 验证 + 分片 | 验证报告 + 分片文件 | |
+
+完成后即可启动 tmux 多窗口自动化开发。
+
+请回复：
+- **Y** — 立即开始规划（推荐，跳过 Analyst 深化，直接从 PM 开始）
+- **YA** — 立即开始规划（含 Analyst 深化项目简报）
+- **N** — 稍后手动规划
+```
+
+### 用户回复 Y 或 YA：执行规划阶段
+
+如果用户确认，**立即按照以下顺序在当前会话中逐个执行**（无需创建 tmux，因为当前已在 Claude Code 中）：
+
+```
+# Step 0: Analyst — 深化项目简报（仅 YA 模式）
+/o analyst
+*create-doc project-brief
+# 等待完成
+
+# Step 1: PM — 生成 PRD（Y 模式从此步开始）
+/clear → /o pm
+*create-doc prd
+# 等待完成
+
+# Step 2: UX Expert — 前端规格（仅当项目有前端需求时）
+/clear → /o ux-expert
+*create-doc front-end-spec
+# 等待完成
+
+# Step 3: Architect — 架构文档
+/clear → /o architect
+*create-doc fullstack-architecture
+# 等待完成
+
+# Step 4: PO — 验证 + 分片
+/clear → /o po
+*execute-checklist po-master-validation
+# 等待完成
+*shard
+# 等待完成
+```
+
+**执行规则**：
+- **Y 模式**：跳过 Step 0，直接从 Step 1 (PM) 开始。项目简报已在 Phase 3 Step 5 生成，PM 可直接使用。
+- **YA 模式**：从 Step 0 (Analyst) 开始，先深化项目简报（加市场调研、竞品分析），再继续后续步骤。
+- 每个 Agent 切换前必须先 `/clear`
+- 按顺序逐个执行，上一个完成后再执行下一个
+- Step 2 (UX Expert) 仅在项目有前端需求时执行（根据 Phase 1 收集的技术栈判断）
+- Step 4 的两个命令发给同一个 Agent (PO)，中间不需要 `/clear`
+
+**全部完成后输出**：
+
+```
+## ✅ 规划阶段完成
+
+所有规划文档已生成：
+- `docs/project-brief.md` — 深化后的项目简报
+- `docs/prd/*.md` — 产品需求文档
+- `docs/front-end-spec*.md` — 前端规格（如适用）
+- `docs/architecture*.md` — 架构文档
+- 分片上下文文件
+
+### 启动自动化开发
+
+打开新终端执行：
+```bash
+cd ~/Codes/{project-dir-name}/
+bash .orchestrix-core/scripts/start-orchestrix.sh
+```
+
+这将启动 tmux 多窗口模式，4 个 Agent (SM/Architect/Dev/QA) 通过 HANDOFF 自动协作开发。
+```
+
+### 用户回复 N：仅输出手动操作指引
+
+```
+好的，你可以稍后手动执行规划：
+
+1. 进入项目目录启动 Claude Code：
+   ```
+   cd ~/Codes/{project-dir-name}/ && claude
+   ```
+
+2. 按顺序执行规划（每步之间先 /clear）：
+   - `/o analyst` → `*create-doc project-brief`
+   - `/o pm` → `*create-doc prd`
+   - `/o ux-expert` → `*create-doc front-end-spec`（如需前端）
+   - `/o architect` → `*create-doc fullstack-architecture`
+   - `/o po` → `*execute-checklist po-master-validation` → `*shard`
+
+3. 规划完成后启动自动化开发：
+   ```
+   bash .orchestrix-core/scripts/start-orchestrix.sh
+   ```
 ```
 
 ---
