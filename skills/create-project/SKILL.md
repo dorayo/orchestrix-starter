@@ -151,7 +151,16 @@ cp "$RESOURCE_DIR/o-status.md" "$PROJECT_DIR/.claude/commands/o-status.md"
 # tmux 启动脚本
 cp "$RESOURCE_DIR/start-orchestrix.sh" "$PROJECT_DIR/.orchestrix-core/scripts/start-orchestrix.sh"
 chmod +x "$PROJECT_DIR/.orchestrix-core/scripts/start-orchestrix.sh"
+
+# Helper 脚本（session 管理 + agent 完成检测）
+cp "$RESOURCE_DIR/ensure-session.sh" "$PROJECT_DIR/.orchestrix-core/scripts/ensure-session.sh"
+chmod +x "$PROJECT_DIR/.orchestrix-core/scripts/ensure-session.sh"
+cp "$RESOURCE_DIR/monitor-agent.sh" "$PROJECT_DIR/.orchestrix-core/scripts/monitor-agent.sh"
+chmod +x "$PROJECT_DIR/.orchestrix-core/scripts/monitor-agent.sh"
 ```
+
+**关于信任对话框：** Claude Code 在进入新项目目录时会弹出 "trust this directory?" 确认框。
+`start-orchestrix.sh` 和 `ensure-session.sh` 已内置自动检测和接受，无需手动操作。
 
 ### Step 4: 生成 core-config.yaml
 
@@ -349,6 +358,8 @@ git commit -m "chore: init project with Orchestrix
 - `.claude/commands/o-status.md` — /o-status 指令
 - `.orchestrix-core/core-config.yaml` — 项目配置
 - `.orchestrix-core/scripts/start-orchestrix.sh` — tmux 多窗口启动脚本
+- `.orchestrix-core/scripts/ensure-session.sh` — tmux session 懒创建
+- `.orchestrix-core/scripts/monitor-agent.sh` — agent 完成检测轮询
 - `.gitignore` — Git 忽略规则
 
 ### 下一步
