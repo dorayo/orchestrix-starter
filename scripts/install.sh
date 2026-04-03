@@ -112,9 +112,8 @@ main() {
     info "Hook:               ~/.claude/hooks/handoff-detector.sh"
     echo ""
     echo "Usage:"
-    echo "  1. Open Claude Code in any directory"
-    echo "  2. Type: /create-project"
-    echo "  3. Follow the interactive prompts"
+    echo "  New project:      /create-project (in Claude Code)"
+    echo "  Existing project:  npx orchestrix install"
     echo ""
 }
 

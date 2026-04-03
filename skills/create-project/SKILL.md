@@ -120,47 +120,30 @@ fi
 ```bash
 PROJECT_DIR=~/Codes/{project-dir-name}
 mkdir -p "$PROJECT_DIR/docs"
-mkdir -p "$PROJECT_DIR/.claude/commands"
-mkdir -p "$PROJECT_DIR/.claude/hooks"
-mkdir -p "$PROJECT_DIR/.orchestrix-core/scripts"
 ```
 
-### Step 2: 生成 .mcp.json
+### Step 2: 安装 Orchestrix 基础设施
 
-读取资源目录中的 `mcp.json.template`，将 `{{ORCHESTRIX_LICENSE_KEY}}` 替换为用户提供的 License Key（或 `YOUR_LICENSE_KEY_HERE`），然后写入 `$PROJECT_DIR/.mcp.json`。
-
-**重要**：如果资源目录中存在 `mcp.json`（非模板版本），直接使用它。如果只有 `mcp.json.template`，则执行替换。
-
-### Step 3: 复制 Orchestrix 基础设施
-
-从资源目录复制文件：
+使用 CLI 安装器一键安装所有文件（slash commands、MCP 配置、tmux 脚本、hooks）：
 
 ```bash
-# Claude Code hooks 配置
-cp "$RESOURCE_DIR/settings.local.json" "$PROJECT_DIR/.claude/settings.local.json"
-
-# Hook 脚本
-cp "$RESOURCE_DIR/handoff-detector.sh" "$PROJECT_DIR/.claude/hooks/handoff-detector.sh"
-chmod +x "$PROJECT_DIR/.claude/hooks/handoff-detector.sh"
-
-# Slash Commands
-cp "$RESOURCE_DIR/o.md" "$PROJECT_DIR/.claude/commands/o.md"
-cp "$RESOURCE_DIR/o-help.md" "$PROJECT_DIR/.claude/commands/o-help.md"
-cp "$RESOURCE_DIR/o-status.md" "$PROJECT_DIR/.claude/commands/o-status.md"
-
-# tmux 启动脚本
-cp "$RESOURCE_DIR/start-orchestrix.sh" "$PROJECT_DIR/.orchestrix-core/scripts/start-orchestrix.sh"
-chmod +x "$PROJECT_DIR/.orchestrix-core/scripts/start-orchestrix.sh"
-
-# Helper 脚本（session 管理 + agent 完成检测）
-cp "$RESOURCE_DIR/ensure-session.sh" "$PROJECT_DIR/.orchestrix-core/scripts/ensure-session.sh"
-chmod +x "$PROJECT_DIR/.orchestrix-core/scripts/ensure-session.sh"
-cp "$RESOURCE_DIR/monitor-agent.sh" "$PROJECT_DIR/.orchestrix-core/scripts/monitor-agent.sh"
-chmod +x "$PROJECT_DIR/.orchestrix-core/scripts/monitor-agent.sh"
+cd "$PROJECT_DIR"
+npx orchestrix install --key "$LICENSE_KEY" --force
 ```
 
+这会自动创建：
+- `.claude/commands/o.md`, `o-help.md`, `o-status.md` — Slash Commands
+- `.mcp.json` — MCP Server 配置（智能合并已有配置）
+- `.orchestrix-core/core-config.yaml` — 项目配置
+- `.orchestrix-core/scripts/start-orchestrix.sh` — tmux 多 Agent 启动脚本
+- `.orchestrix-core/scripts/handoff-detector.sh` — HANDOFF 自动检测 Hook
+- `.claude/settings.local.json` — Claude Code Stop Hook
+- `.env.local` — License Key 存储
+
+> **离线模式**：如果网络不通，加 `--offline` 参数使用内置文件安装。
+
 **关于信任对话框：** Claude Code 在进入新项目目录时会弹出 "trust this directory?" 确认框。
-`start-orchestrix.sh` 和 `ensure-session.sh` 已内置自动检测和接受，无需手动操作。
+`start-orchestrix.sh` 已内置自动检测和接受，无需手动操作。
 
 ### Step 4: 生成 core-config.yaml
 
