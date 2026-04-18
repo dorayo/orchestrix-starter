@@ -237,6 +237,11 @@ Claude Code 在进入新项目目录时会弹出 "Do you trust this folder?" 确
 │  SM *draft → Architect *review → Dev *develop-story      │
 │  → QA *review → SM *draft (下一个) → ... 循环              │
 │                                                         │
+│  ⚠️  启动后编排者（OpenClaw/Yuri）只监控，不发命令！          │
+│  handoff-detector.sh (Stop Hook) 驱动全部 agent 间路由。   │
+│  编排者直接发 tmux send-keys 会与 handoff-detector 竞态。  │
+│  编排者仅在 stuck recovery 时才可重新介入。                  │
+│                                                         │
 │  ✅ 开发完成标志: 所有 Story 通过 QA 审查                    │
 └─────────────────────┬───────────────────────────────────┘
                       ↓
@@ -574,7 +579,32 @@ SM (窗口1) → 创建下一个 Story
 - 在源 Agent 窗口执行 `/clear` + 重新加载 Agent
 - Hash 去重 + 原子锁防止重复处理
 
-### 5.5 监控
+### 5.5 编排者自治边界（OpenClaw / Yuri）
+
+> **启动后，编排者（OpenClaw / Yuri）只监控，不发命令。**
+> handoff-detector.sh 是开发阶段的唯一路由引擎。
+
+**为什么编排者不能在启动后继续发 tmux send-keys：**
+
+1. handoff-detector.sh 在每次 agent 完成任务后对 source 窗口执行 `/clear` + `/o {agent}` 重新加载
+2. 如果编排者同时向该窗口发送命令，命令会被 `/clear` 吞掉（竞态条件）
+3. 如果编排者主动 `/clear` 某个窗口，会触发 Stop Hook，handoff-detector 误解为 agent 完成任务
+
+**编排者的正确行为：**
+
+| 阶段 | 编排者行为 |
+|------|-----------|
+| 启动 | 发 **1 条**命令给 SM 启动循环（`*draft {first_story}`），然后立即转入监控 |
+| 正常运行 | 只读操作：`tmux capture-pane`、`scan-stories.sh`、读 handoff 日志 |
+| Stuck Recovery | 15 分钟无进展时才可重新发送命令（resend HANDOFF / restart agent） |
+| 恢复后 | 立即回到监控模式 |
+
+**新 iteration 启动时的特殊注意：**
+- SM 被 `/clear` 后丢失上下文，不知道新 iteration 的 epic 范围
+- 编排者应在 kickoff 命令中包含完整上下文（epic 列表和顺序）
+- 或创建 `docs/prd/iteration-{N}-scope.yaml` 持久化范围
+
+### 5.6 监控
 
 ```bash
 # 实时查看 HANDOFF 日志
